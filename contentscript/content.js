@@ -155,7 +155,7 @@ function addOptionsAreas(post, allowMultiple = false, ...projects){
                 //queue process here
                 if(taggingProjects.queue.isactive){//TODO rework queue compression to be on by default, call it "auto-compression"
                     //TODO if queue is active, pull ALL changes for current post (if theyre compressed) then throw them through the project chaining
-                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:option.change})
+                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:option.change, projectName: project.tagprojectName})
                     saveList(taggingProjects);
                 }else{
                     postChange(post.dataset.id, option.change, project.tagprojectName);
