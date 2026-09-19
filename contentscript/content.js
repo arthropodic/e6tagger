@@ -437,7 +437,7 @@ function handleMessage(message){
     if (message.action === 'sendChange'){
         console.log(message.change.postnum, message.change.change);
         return requestQueue.add(() =>
-            postChange(message.change.postnum,message.change.change)
+            postChange(message.change.postnum,message.change.change, message.projectName)
         );
     }
     if(message.action === 'appendCriteria'){
