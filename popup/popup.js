@@ -242,7 +242,8 @@ async function sendRequest(request) {
         } else if (request.type === 'change') {
             const result = await sendChange({
                 postnum: request.postnum,
-                change: request.change
+                change: request.change,
+              projectName: request.projectName
             });
 
             console.log('Change finished:', result);
@@ -319,10 +320,11 @@ async function clearHighlights() {
     });
 }
 
-async function sendChange(change) {
+async function sendChange(change, projectName) {
     return sendToContentScript({
         action: 'sendChange',
-        change
+        change,
+        projectName
     });
 }
 
