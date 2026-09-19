@@ -1,0 +1,217 @@
+body {
+	background:#101112;
+	color:#00ff00;
+	font-family: 'Lucida Console', 'Courier New', monospace;
+	font-size: 71%;
+}
+
+input{
+	outline: none;
+	background:#181a1f;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	color: inherit;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+input.warning{
+	border-color: #ff0000;
+}
+
+textarea{
+	outline: none;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	color: inherit;
+	background:#181a1f;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+button{
+	background: #000000;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	color: inherit;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+button.focus{
+	background-color: #181a1f;
+}
+
+button.deletetype{
+	color: #ffffff;
+	background-color: #ff0000;
+}
+
+.checkbox-wrapper{
+	display: flex;
+	align-items: center;
+}
+
+.dropdown {
+	display: none;
+  	position: absolute;
+	flex-flow: column;
+	background-color: #101112;
+	width: 10rem;
+	height: 5rem;
+	gap: 3px;
+}
+
+.dropdown.open {
+    display: flex;
+}
+
+#popup{
+	display: flex;
+	align-items: stretch;
+	max-height: 35rem;
+	overflow-y: auto;
+}
+#main-menu{
+	border: 5px solid #000000;
+	display: flex;
+	flex-direction: column;
+}
+#current-projects{
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+	gap:1rem;
+    overflow-y: auto;
+}
+
+#current-projects:has(> *){
+	padding-block: 1rem;
+}
+
+.project {
+	display: grid;
+    grid-template-columns: 8rem 2rem;
+    grid-template-rows: 2rem 2rem;
+    width: 11rem;
+    justify-content: space-around;
+}
+
+#queue{
+	display: none;
+	max-height: 35rem;
+	place-items: center;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	row-gap: 1rem;
+}
+
+#request-bulk{
+	display: flex;
+	flex-flow: column;
+	max-height: 25rem;
+	overflow-y: scroll;
+}
+
+#bar {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 1rem;
+	min-height: 7dvh;
+	width: auto;
+	background:#181a1f;
+	justify-content: space-between;
+	padding:1rem;
+}
+
+#tagging-project-menu{
+	display: none;
+	grid-template-columns: 1fr 3fr;
+	column-gap: 1rem; 
+	max-height: 50dvh;
+	background:#181a1f;
+	padding: 1rem;
+	margin-top: 1rem;
+}
+
+#created-projects-container{
+	display: grid;
+	place-items: center;
+	row-gap: 1rem;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	padding: 1rem;
+	max-height: 46dvh;
+	overflow-y: scroll;
+}
+
+#project-form-container{
+	display: grid;
+	place-items: center;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	row-gap: 1rem;
+}
+
+.variant-container{
+	display: none;
+	position: relative;
+}
+
+#optionsArea{
+	display: grid;
+	grid-auto-flow: column;
+	column-gap: 1rem;
+	padding-bottom: 1rem;
+	max-width: 100%;
+	overflow-x: scroll;
+}
+
+.option{
+	display: grid;
+	row-gap: 1dvh;
+}
+
+.projectconfigure {
+	display: grid;
+	grid-auto-flow: column;
+	grid-template-columns: 8fr 1fr 1fr;
+	height: 10dvh;
+	width: 100%;
+	column-gap: 1rem;
+}
+
+#settings-menu{
+	display: none;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 1rem; 
+	max-height: 50dvh;
+	background:#181a1f;
+	padding: 1rem;
+	margin-top: 1rem;
+}
+
+#workflow-menu{
+	display: grid;
+	place-items: center;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	row-gap: 1rem;
+}
+
+#styling-menu{
+	display: grid;
+	place-items: center;
+	border-style: solid;
+	border-color: #000000;
+	border-width: 5px;
+	row-gap: 1rem;
+}
