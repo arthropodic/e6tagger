@@ -42,7 +42,7 @@ async function postChange(postId, change) {
     });
 
     const agent = new URLSearchParams({
-        _client: 'e6tagger/1.0 (by arthropodic)'
+        _client: 'e6tagger/0.1 (by arthropodic)'
     });
 
     const response = await fetch(
