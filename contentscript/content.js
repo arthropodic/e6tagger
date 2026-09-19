@@ -31,13 +31,14 @@ function appendCriteria(criteria){
     searchButton.click();
 }
 //contact to e621
-async function postChange(postId, change) {
+async function postChange(postId, change, projectName) {
     const authToken = document.querySelector('meta[name="csrf-token"]')?.content;
     if (!authToken) {
         throw new Error('Could not find CSRF token, not logged in');
     }
     const body = new URLSearchParams({
         'post[tag_string_diff]': change,
+        'post[edit_reason]': `Using Tagging Project: ${projectName}`,
         authenticity_token: authToken
     });
 
@@ -157,7 +158,7 @@ function addOptionsAreas(post, allowMultiple = false, ...projects){
                     taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:option.change})
                     saveList(taggingProjects);
                 }else{
-                    postChange(post.dataset.id, option.change);
+                    postChange(post.dataset.id, option.change, project.tagprojectName);
                 }
                 if(taggingProjects.projectChaining){ //TODO bug fix when 1 project's change has been sent, you click a different project & it re-adds the first project's option area
                     const currentTags = getCurrentTags(post);
@@ -186,7 +187,7 @@ function addOptionsAreas(post, allowMultiple = false, ...projects){
                     taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:combinedChange})
                     saveList(taggingProjects);
                 }else{
-                    postChange(post.dataset.id, combinedChange);
+                    postChange(post.dataset.id, combinedChange, project.tagprojectName);
                 }
 
                 if(taggingProjects.projectChaining){
