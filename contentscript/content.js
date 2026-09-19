@@ -151,7 +151,7 @@ function addOptionsAreas(post, allowMultiple = false, ...projects){
                     return;
                 }
 
-                console.log(post.dataset.id, option.change);
+                console.log(post.dataset.id, option.change, project.tagprojectName);
                 //queue process here
                 if(taggingProjects.queue.isactive){//TODO rework queue compression to be on by default, call it "auto-compression"
                     //TODO if queue is active, pull ALL changes for current post (if theyre compressed) then throw them through the project chaining
