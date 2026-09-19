@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "e6tagger",
+    "version": "0.1",
+    "description": "Tagging tool for e621.",
+
+    "action": {
+    	"default_icon": {
+        	"16": "icons/tag.png",
+        	"48": "icons/tag.png"
+    	},
+    "default_popup": "popup/popup.html"
+	},
+
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "e6tagger@example.org"
+        }
+    },
+
+    "icons":
+	{
+		"16": "icons/tag.png",
+        "48": "icons/tag.png"
+	},
+
+    "permissions":
+	[
+		"storage",
+		"downloads"
+	],
+
+    "host_permissions":
+	[
+		"*://e621.net/*",
+		"*://static1.e621.net/*"
+	],
+
+	"content_scripts": [
+		{
+			"matches": [
+				"*://e621.net/*"
+			],
+			"js": [
+				"contentscript/TaskQueue.js",
+				"contentscript/content.js"
+			],
+			"css": [
+				"contentscript/content.css"
+			]
+		}
+  	]
+}
