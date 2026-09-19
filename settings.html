@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TaggingProjects/Settings</title>
+    <link rel='stylesheet' type='text/css' href='../main.css'>
+</head>
+<body>
+    <div id='bar'>
+        <button>Tagging Projects</button>
+        <button>Settings</button>
+    </div>
+    <div id='tagging-project-menu'>
+            <div id='created-projects-container'>
+                <input type='file' id='loadProject' accept='.json' multiple hidden>
+                <div style='display: flex; flex-flow: row; width: 55%;gap: 1rem; justify-content: center;'>
+                    <div>
+                        <button id='create-new' style='margin-bottom: 10px;'>+</button>
+                        <div id='create-project-select-dropdown' class='dropdown'>
+                            <button>Create New Project...</button>
+                            <button>Load Project(s) From File..</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id='project-form-container'>
+                <input type='text' placeholder='Tag Project Name...' autocomplete='off'>
+                <textarea placeholder='Tag Project Description...' autocomplete='off' style='height:15vh;width: 50%;'></textarea>
+                <div style='display: flex; flex-flow: row; width: 55%;gap: 1rem; justify-content: center;'>
+                    <input id='criteria' type='text' placeholder='Tag Project Criteria...' autocomplete='off' style='width: 90%;'>
+                    <div id='criteria-variants-container' class='variant-container'>
+                        <button id='criteria-variants-button' style='width: 2rem; height: 2rem;'>+</button>
+                        <div id='variant-dropdown' class='dropdown'>
+                            <button>Strict</button>
+                            <button>Multi-Character</button>
+                            <button>Color-Based</button>
+                            <button>Inverse-Options</button>
+                        </div>
+                    </div>
+                </div>
+                <div id='template-wrapper' class='checkbox-wrapper'>
+                    <input type='checkbox' id='template-checkbox'>
+                    <label for='template-checkbox'>Template project?</label>
+                </div>
+                <div style='display: grid; grid-auto-flow: column; align-items: center;''>
+                    <button id='addOption' style='height: 40%;width: 5vw; margin: 1rem;'> Create New Option... </button>
+                    <div id='optionsArea'></div>
+                </div>
+                <button id='save-button' style='margin-bottom: 10px;'>Save</button>
+                <button id='save-new-button' style='margin-bottom: 10px;'>Save new</button>
+            </div>
+    </div>
+    <div id='settings-menu'>
+        <div id='workflow-menu'>
+            <button id='workflow1'> Workflow 1: Hover</button>
+            <button id='workflow2' style='display: none;'> Workflow 2</button>
+            <div class='checkbox-wrapper'>
+                <input type='checkbox' id='queueless'>
+                <label for='queueless'>Queue-less</label>
+            </div>
+            <div class='checkbox-wrapper'>
+                <input type='checkbox' id='criteria-variants-setting'>
+                <label for='criteria-variants-setting'>Criteria Variants (Advanced)</label>
+            </div>
+            <div class='checkbox-wrapper'>
+                <input type='checkbox' id='project-chaining-setting'>
+                <label for='project-chaining-setting'>Project Chaining (Advanced)</label>
+            </div>
+        </div>
+        <div id='styling-menu'>
+            <label>styling menu placeholder</label>
+        </div>
+    </div>
+    <script src='settings.js'></script>
+</body>
+</html>
