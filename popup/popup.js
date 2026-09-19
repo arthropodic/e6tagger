@@ -80,7 +80,7 @@ async function initialize(){
             const toggled = buttonX.classList.toggle("focus")
             if (toggled){
                 console.log(multiOptionCheckbox.checked);
-                multiOptionCheckbox.checked ? highlightPosts(taggingProject,true) : highlightPosts(taggingProject,false);
+                multiOptionCheckbox.checked ? highlightPosts(projectX._project,true) : highlightPosts(projectX._project,false);
             } else {//TODO remove the toggle, replace with a "clear highlights" option
                 clearHighlights();
             } 
