@@ -198,7 +198,7 @@ button.deletetype{
 	margin-top: 1rem;
 }
 
-#workflow-menu{
+#general-settings-menu{
 	display: grid;
 	place-items: center;
 	border-style: solid;
