@@ -235,8 +235,8 @@ function validateProjectForm() { //TODO add a check for criteria conflicts, thro
     const projectName = projectFormContainer.children[0];
     const projectCriteria = criteriaInput;
     let isValid = true;
-    // Validate a single input and manage its warning class
-    const validateInput = input => {
+  
+    const validateInput = input => {//Validate a single input
         const empty = !input.value.trim();
         input.classList.toggle('warning', empty);
         if (empty) {
@@ -244,13 +244,43 @@ function validateProjectForm() { //TODO add a check for criteria conflicts, thro
         }
         return !empty;
     };
-    // Validate project name and criteria
+  
+    const validateCharacters = input => { //whitespace, -, _, and a-z is allowed.
+        const value = input.value.trim();
+        const valid = /^[A-Za-z _()\-]+$/.test(value);
+        input.classList.toggle('warning', !valid);
+        if (!valid) {
+            isValid = false;
+        }
+        return valid;
+    };
+
+    const validateTags = input => {
+        const value = input.value.trim();
+        //Split the input into individual tags
+        const tags = value.split(/\s+/);
+        const valid = tags.every(tag => {
+            return /^-?[A-Za-z][A-Za-z_()\-]*$/.test(tag);// A tag may optionally begin with '-', must contain at least one letter, may contain letters '-' or '_'.
+        });
+        input.classList.toggle('warning', !valid);
+        if (!valid) {
+            isValid = false;
+        }
+        return valid;
+    };
+    //validate name & criteria
     validateInput(projectName);
     validateInput(projectCriteria);
     // Validate options
     for (const option of optionsContainer.children) {
         validateInput(option.children[0]);
-        validateInput(option.children[1]);
+        const tagsInput = option.children[1];
+        validateInput(tagsInput);
+        if (tagsInput.value.trim()) {
+            if (validateCharacters(tagsInput)) {
+                validateTags(tagsInput);
+            }
+        }
     }
     return isValid;
 }
