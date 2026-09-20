@@ -247,7 +247,7 @@ function validateProjectForm() { //TODO add a check for criteria conflicts, thro
   
     const validateCharacters = input => { //whitespace, -, _, and a-z is allowed.
         const value = input.value.trim();
-        const valid = /^[A-Za-z _-]+$/.test(value);
+        const valid = /^[A-Za-z _()\-]+$/.test(value);
         input.classList.toggle('warning', !valid);
         if (!valid) {
             isValid = false;
@@ -260,7 +260,7 @@ function validateProjectForm() { //TODO add a check for criteria conflicts, thro
         //Split the input into individual tags
         const tags = value.split(/\s+/);
         const valid = tags.every(tag => {
-            return /^-?[A-Za-z][A-Za-z_-]*$/.test(tag);// A tag may optionally begin with '-', must contain at least one letter, may contain letters '-' or '_'.
+            return /^-?[A-Za-z][A-Za-z_()\-]*$/.test(tag);// A tag may optionally begin with '-', must contain at least one letter, may contain letters '-' or '_'.
         });
         input.classList.toggle('warning', !valid);
         if (!valid) {
