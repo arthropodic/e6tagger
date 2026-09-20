@@ -22,3 +22,9 @@ If in private mode, set extension to be usable in private mode.
 7. Click option based on what you see within post.
 8. Click popup, see change within queue. Click submit.
 9. (optional) Explore features!
+
+# Troubleshooting:
+A. Hovering over a post flickers? Do you have arkenfox.js installed? If so, here are the steps to fix this:
+  1. Go to 'about:config'
+  2. Search for the setting: privacy.antitracking.isolateContentScriptResources
+  3. Toggle it to false.
