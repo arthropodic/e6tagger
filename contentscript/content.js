@@ -184,7 +184,7 @@ function addOptionsAreas(post, allowMultiple = false, ...projects){
                 console.log(post.dataset.id, combinedChange);
 
                 if(taggingProjects.queue.isactive){
-                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:combinedChange})
+                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:combinedChange, projectName: project.tagprojectName})
                     saveList(taggingProjects);
                 }else{
                     postChange(post.dataset.id, combinedChange, project.tagprojectName);
@@ -435,9 +435,9 @@ function handleMessage(message){
         return Promise.resolve(true);
     }
     if (message.action === 'sendChange'){
-        console.log(message.change.postnum, message.change.change);
+        console.log(message);
         return requestQueue.add(() =>
-            postChange(message.change.postnum,message.change.change, message.change.projectName)
+            postChange(message.change. postnum,message.change.change, message.change.projectName)
         );
     }
     if(message.action === 'appendCriteria'){
