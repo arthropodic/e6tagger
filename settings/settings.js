@@ -16,8 +16,6 @@ const addOptionButton = document.getElementById('addOption');
 const saveButton = document.getElementById('save-button');
 const saveNewButton = document.getElementById('save-new-button');
 const settingsMenu = document.getElementById('settings-menu');
-const workflowMenu = document.getElementById('workflow-menu');
-const workflowButtons = [document.getElementById('workflow1'),document.getElementById('workflow2')];//radial
 const queuelessBox = document.getElementById('queueless');
 const criteriaVariantSetting = document.getElementById('criteria-variants-setting');
 const projectChainingSetting = document.getElementById('project-chaining-setting');
@@ -62,11 +60,9 @@ async function initialize(){
         createProjectElement(project);
     }
     //settings menu
-    //workflow
-    workflowMenu.children[taggingProjects.workflow - 1].classList.add('focus'); //TODO Workflow isn't a boolean for design choice, for adding possible future workflows. Despite workflow not being a hidden attribute, catch when its not valid. 
     //queueless
     const checked = taggingProjects.queue.isactive;
-    workflowMenu.children[2].children[0].checked = !checked;
+    queuelessBox.checked = !checked;
     //Criteria variant
     criteriaVariantSetting.checked = taggingProjects.variantCriteria;
     //project chaining
@@ -431,20 +427,6 @@ saveButton.addEventListener('click', async () => {
 saveNewButton.addEventListener('click', async () => {
     await saveProject(true);
 })
-//Workflow menu TODO add multi option choice, radial option choice(add/remove focus), then add the border highlight to be optional (trigger on any post, all tagging projects). Make blacklist post filtering optional. option for trigger all on 1 button, or page load.
-//workflow radial buttons
-//Workflow 1 button
-workflowButtons[0].addEventListener('click', radialCheck(workflowButtons, async function (){
-    taggingProjects.workflow = 1;
-    //console.log(taggingProjects);
-    await saveList(taggingProjects);
-}))
-//Workflow 2 button
-workflowButtons[1].addEventListener('click', radialCheck(workflowButtons, async function (){
-    taggingProjects.workflow = 2;
-    //console.log(taggingProjects);
-    await saveList(taggingProjects);
-}))
 //queueless checkbox TODO add optional request blocking, will convert 150 changes into a block of changes that can be saved and loaded into queue.
 queuelessBox.addEventListener('change', async () => {
     //if its checked, taggingProjects.queue.isactive should be false, when its unchecked it should be true.
