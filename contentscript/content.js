@@ -1,4 +1,4 @@
-//TODO make the site interactions cross extension compatable
+//TODO make the site interactions cross extension compatable by replacing all site articles with post elements, then create the post elements through the content script.
 const STORAGE_KEY = 'taggingProjects';
 let taggingProjects;
 const requestQueue = new TaskQueue();
