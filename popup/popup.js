@@ -323,8 +323,7 @@ async function clearHighlights() {
 async function sendChange(change, projectName) {
     return sendToContentScript({
         action: 'sendChange',
-        change,
-        projectName
+        change
     });
 }
 
