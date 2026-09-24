@@ -1,4 +1,4 @@
-# e6tagger 0.1
+# e6tagger 0.3
 Tagging Tool for e621 Booru.
 Depends on Mozilla based browser, doesn't work with re621 or Umami Extension.
 Changes made with extension are YOUR responsibility. Use responsibly.
