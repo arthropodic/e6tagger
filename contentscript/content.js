@@ -78,11 +78,30 @@ async function postChange(postId, change, projectName) {
 function centerOn(post) {
     const postRect = post.getBoundingClientRect();
     const content = document.querySelector('.content');
+    const img = post.querySelector('img');//pulling the aspect ratio from the post's thumbnail
     if (!content) {
         console.error('Could not find .content');
         return;
     }
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
     const contentRect = content.getBoundingClientRect();
+    let containerWidth;
+    let containerHeight;
+    
+    if (aspectRatio >= 1) {
+        // Landscape or square
+        containerWidth = 700;
+        containerHeight = 700 / aspectRatio;
+    } else {
+        // Portrait
+        containerWidth = 700 * aspectRatio;
+        containerHeight = 700;
+    }
+
+    // Apply the calculated dimensions to the zoom container
+    zoomContainer.style.width = `${containerWidth}px`;
+    zoomContainer.style.height = `${containerHeight}px`;
+    
     //Center zoomContainer on the post
     let x =
         postRect.left +
