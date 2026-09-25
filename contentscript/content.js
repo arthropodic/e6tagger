@@ -14,6 +14,7 @@ let zoomContainer,iFrame, zoomOptions;
 let activePost = null;
 //zoom purpose assurance
 let zoomHideTimer = null;
+let zoomLoadId = 0;
 //save data
 async function saveList(list) {
     await browser.storage.local.set({
@@ -83,7 +84,8 @@ function centerOn(post) {
         console.error('Could not find .content');
         return;
     }
-    zoomContainer.style.display = 'flex'; //The container has to be displayed before measuring offsetWidth/offsetHeight
+    //The container has to be displayed before measuring offsetWidth/offsetHeight
+    zoomContainer.style.display = 'flex';
     const aspectRatio = img.naturalWidth / img.naturalHeight;
     const contentRect = content.getBoundingClientRect();
     let containerWidth;
@@ -148,13 +150,16 @@ function cancelHideZoom() {
 // add/delete posts with 'getPostProjects(post).add(project)' or 'getPostProjects(post).delete(project)' or simply 'getPostProjects(post).size'
 function getPostProjects(post) {
     if (!postProjects.has(post)) {
-        postProjects.set(post, new Map());
+        postProjects.set(post, {
+            postData: getPostData(post),
+            projects: new Map()
+        });
     }
     return postProjects.get(post);
 }
 //For specific posts
 function removePostProject(post, projectName) {
-    const projects = getPostProjects(post);
+    const { projects } = getPostProjects(post);
     projects.delete(projectName);
 }
 
@@ -185,17 +190,34 @@ function isRe621Post(post) {
     return post.tagName.toLowerCase() === 'post';
 }
 //TODO add gif/mp4/webm integration
-function loadSampleImage(sampleUrl) {
-    return new Promise((resolve, reject) => {
-        // Load the sample
-        iFrame.onload = () => {
-            console.log('Sample iframe loaded:', sampleUrl);
-            resolve();
-        };
-        iFrame.onerror = () => {
-            reject(new Error(`Failed to load sample: ${sampleUrl}`));
-        };
-        iFrame.src = sampleUrl;
+function loadSampleImage(post) {
+    return new Promise((resolve) => {
+        const { thumbnailUrl, sampleUrl } =
+            getPostProjects(post).postData;
+
+        const loadId = ++zoomLoadId;
+        //Show the thumbnail immediately
+        iFrame.src = thumbnailUrl;
+        //Give the browser one rendering opportunity to display it before navigating the iframe to the sample.
+        requestAnimationFrame(() => {
+            if (loadId !== zoomLoadId || activePost !== post) {
+                resolve();
+                return;
+            }
+
+            const handleLoad = () => {
+                iFrame.removeEventListener('load', handleLoad);
+                // Ignore a load belonging to an old hover operation.
+                if (loadId !== zoomLoadId || activePost !== post) {
+                    resolve();
+                    return;
+                }
+                console.log('Sample iframe loaded:', sampleUrl);
+                resolve();
+            };
+            iFrame.addEventListener('load', handleLoad);
+            iFrame.src = sampleUrl;
+        });
     });
 }
 //if post is blacklisted. Haven't seen a non true blacklisted state for re621.
@@ -208,25 +230,28 @@ function isBlacklistedPost(post) {
 //adapter between re621 and vanilla e621
 function getPostData(post) {
     if (isRe621Post(post)) {
+        const image = post.querySelector('img');
         return {
             element: post,
             id: post.dataset.id,
             tags: post.dataset.tags ?? '',
             sampleUrl: post.dataset.sampleUrl,
-            image: post.querySelector('img'),
+            thumbnailUrl: image?.currentSrc || image?.src,
         };
     }
 
+    const image = post.querySelector('picture img');
     return {
         element: post,
         id: post.dataset.id,
         tags: post.dataset.tags ?? '',
         sampleUrl: post.dataset.sampleUrl,
-        image: post.querySelector('picture img'),
+        thumbnailUrl: image?.currentSrc || image?.src
     };
 }
 
 function hideZoomContainer() {
+    zoomLoadId++;
     zoomContainer.style.display = 'none';
 
     zoomOptions.replaceChildren();
@@ -297,7 +322,7 @@ function createOptionsArea(post, project, allowMultiple) {
 
 function renderZoomOptions(post, allowMultiple) {
     zoomOptions.replaceChildren();
-    const projects = getPostProjects(post);
+    const { projects } = getPostProjects(post);
     if (projects.size === 0) {
         zoomOptions.style.display = 'none';
         return;
@@ -353,27 +378,30 @@ async function processProjectChange(post, project, change, allowMultiple){
     }
 
     //Nothing left to do
-    if (getPostProjects(post).size === 0) {
+    if (getPostProjects(post).projects.size === 0) {
         finishPost(post);
     }
 }
 
 function addMouseEnterHandler(post, allowMultiple) {
     const mouseEnterHandler = async () => {
-        const projects = getPostProjects(post);
+        const { projects } = getPostProjects(post);
 
         if (projects.size === 0) {
             return;
         }
         cancelHideZoom();
+        //If switching directly from another post, immediately kill the old zoom state
+        if (activePost !== null && activePost !== post) {
+            zoomLoadId++;
+            zoomContainer.style.display = 'none';
+            zoomOptions.replaceChildren();
+            zoomOptions.style.display = 'none';
+        }
         activePost = post;
-        renderZoomOptions(post, allowMultiple);
-        requestAnimationFrame(() => {
-            centerOn(post);
-        });
-        await loadSampleImage(post.dataset.sampleUrl);
-        
-        if (getPostProjects(post).size === 0) return;//The post might have been completed while the image was loading
+        renderZoomOptions(post, allowMultiple);//Render the controls for the new post
+        centerOn(post);//Position and SHOW the container immediately
+        loadSampleImage(post);//Start the thumbnail/sample transition independently
     };
 
     const mouseLeaveHandler = () => {
@@ -438,7 +466,7 @@ function applyChangeToTags(currentTags, change) {
 }
 //project chaining adding post to project
 function updatePostProjects(post, tags, allowMultiple) {
-    const projects = getPostProjects(post);
+    const { projects } = getPostProjects(post);
     const completed = getCompletedProjects(post);
 
     for (const project of selectedProjects) {
@@ -497,7 +525,7 @@ function highlightPosts(project, allowMultiple) {
 
         const filteredProject = {...project, options: validOptions};
 
-        getPostProjects(post).set(filteredProject.tagprojectName, filteredProject);
+        getPostProjects(post).projects.set(filteredProject.tagprojectName, filteredProject);
 
         post.classList.add('highlighted-post');
 
