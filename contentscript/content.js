@@ -367,11 +367,14 @@ function addMouseEnterHandler(post, allowMultiple) {
         }
         cancelHideZoom();
         activePost = post;
-        await loadSampleImage(post.dataset.sampleUrl);
-        if (getPostProjects(post).size === 0) {//The post might have been completed while the image was loading
-            return;
-        }
         renderZoomOptions(post, allowMultiple);
+        requestAnimationFrame(() => {
+            centerOn(post);
+        });
+        await loadSampleImage(post.dataset.sampleUrl);
+        
+        if (getPostProjects(post).size === 0) return;//The post might have been completed while the image was loading
+        
         requestAnimationFrame(() => {
             centerOn(post);
         });
