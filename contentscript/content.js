@@ -2,11 +2,19 @@
 const STORAGE_KEY = 'taggingProjects';
 let taggingProjects;
 const requestQueue = new TaskQueue();
+//whats to be displayed
+const postProjects = new WeakMap();
 //project chaining
 const selectedProjects = new Set();
-const originalMatches = new WeakMap();
 //project chaining + queue
 const simulatedTags = new WeakMap();
+const completedProjects = new WeakMap();
+//Zoom container + options
+let zoomContainer,iFrame, zoomOptions;
+let activePost = null;
+//zoom purpose assurance
+let zoomHideTimer = null;
+let zoomLoadId = 0;
 //save data
 async function saveList(list) {
     await browser.storage.local.set({
@@ -43,7 +51,7 @@ async function postChange(postId, change, projectName) {
     });
 
     const agent = new URLSearchParams({
-        _client: 'e6tagger/0.1 (by arthropodic)'
+        _client: 'e6tagger/0.3 (by arthropodic)'
     });
 
     const response = await fetch(
@@ -68,22 +76,148 @@ async function postChange(postId, change, projectName) {
     return data;
 }
 
-function getPostElements() {
+function centerOn(post) {
+    const postRect = post.getBoundingClientRect();
+    const content = document.querySelector('.content');
+    const img = post.querySelector('img');//pulling the aspect ratio from the post's thumbnail
+    if (!content) {
+        console.error('Could not find .content');
+        return;
+    }
+    //The container has to be displayed before measuring offsetWidth/offsetHeight
+    zoomContainer.style.display = 'flex';
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    const contentRect = content.getBoundingClientRect();
+    let containerWidth;
+    let containerHeight;
+    
+    if (aspectRatio >= 1) {
+        // Landscape or square
+        containerWidth = 700;
+        containerHeight = 700 / aspectRatio;
+    } else {
+        // Portrait
+        containerWidth = 700 * aspectRatio;
+        containerHeight = 700;
+    }
+
+    // Apply the calculated dimensions to the zoom container
+    zoomContainer.style.width = `${containerWidth}px`;
+    zoomContainer.style.height = `${containerHeight}px`;
+    
+    //Center zoomContainer on the post
+    let x =
+        postRect.left +
+        postRect.width / 2 -
+        zoomContainer.offsetWidth / 2;
+
+    let y =
+        postRect.top +
+        postRect.height / 2 -
+        zoomContainer.offsetHeight / 2;
+    //Keep the zoomContainer completely inside .content
+    const minX = contentRect.left;
+    const maxX = contentRect.right - zoomContainer.offsetWidth;
+
+    const minY = contentRect.top;
+    const maxY = contentRect.bottom - zoomContainer.offsetHeight;
+
+    x = Math.max(minX, Math.min(x, maxX));
+    y = Math.max(minY, Math.min(y, maxY));
+
+
+    zoomContainer.style.left = `${x}px`;
+    zoomContainer.style.top = `${y}px`;
+}
+
+function getPostElements() {//TODO depreciated, adapt to new zoomContainer model
     return [
     ...document.querySelectorAll('article.thumbnail'),//vanilla
     ...document.querySelectorAll('post')//re621
     ];
 }
+
+function scheduleHideZoom() {
+    clearTimeout(zoomHideTimer);
+    zoomHideTimer = setTimeout(() => {
+        hideZoomContainer();
+    }, 100);
+}
+function cancelHideZoom() {
+    clearTimeout(zoomHideTimer);
+}
+
+// add/delete posts with 'getPostProjects(post).add(project)' or 'getPostProjects(post).delete(project)' or simply 'getPostProjects(post).size'
+function getPostProjects(post) {
+    if (!postProjects.has(post)) {
+        postProjects.set(post, {
+            postData: getPostData(post),
+            projects: new Map()
+        });
+    }
+    return postProjects.get(post);
+}
+//For specific posts
+function removePostProject(post, projectName) {
+    const { projects } = getPostProjects(post);
+    projects.delete(projectName);
+}
+
+function getCompletedProjects(post) {
+    if (!completedProjects.has(post)) {
+        completedProjects.set(
+            post,
+            new Set()
+        );
+    }
+
+    return completedProjects.get(post);
+}
+
+function finishPost(post) {
+    removeMouseHandlers(post);
+    post.classList.remove('highlighted-post');
+    postProjects.delete(post);
+    simulatedTags.delete(post);
+    completedProjects.delete(post);
+    if (activePost === post) {
+        hideZoomContainer();
+        activePost = null;
+    }
+}
 //re621 detection
 function isRe621Post(post) {
     return post.tagName.toLowerCase() === 'post';
 }
-// clears whatever falls within criteria TODO add gif/mp4/webm integration
-function loadImage(img, src) {
-    return new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = src;
+//TODO add gif/mp4/webm integration
+function loadSampleImage(post) {
+    return new Promise((resolve) => {
+        const { thumbnailUrl, sampleUrl } =
+            getPostProjects(post).postData;
+
+        const loadId = ++zoomLoadId;
+        //Show the thumbnail immediately
+        iFrame.src = thumbnailUrl;
+        //Give the browser one rendering opportunity to display it before navigating the iframe to the sample.
+        requestAnimationFrame(() => {
+            if (loadId !== zoomLoadId || activePost !== post) {
+                resolve();
+                return;
+            }
+
+            const handleLoad = () => {
+                iFrame.removeEventListener('load', handleLoad);
+                // Ignore a load belonging to an old hover operation.
+                if (loadId !== zoomLoadId || activePost !== post) {
+                    resolve();
+                    return;
+                }
+                console.log('Sample iframe loaded:', sampleUrl);
+                resolve();
+            };
+            iFrame.addEventListener('load', handleLoad);
+            iFrame.src = sampleUrl;
+        });
     });
 }
 //if post is blacklisted. Haven't seen a non true blacklisted state for re621.
@@ -96,216 +230,196 @@ function isBlacklistedPost(post) {
 //adapter between re621 and vanilla e621
 function getPostData(post) {
     if (isRe621Post(post)) {
+        const image = post.querySelector('img');
         return {
             element: post,
             id: post.dataset.id,
             tags: post.dataset.tags ?? '',
             sampleUrl: post.dataset.sampleUrl,
-            image: post.querySelector('img'),
+            thumbnailUrl: image?.currentSrc || image?.src,
         };
     }
 
+    const image = post.querySelector('picture img');
     return {
         element: post,
         id: post.dataset.id,
         tags: post.dataset.tags ?? '',
         sampleUrl: post.dataset.sampleUrl,
-        image: post.querySelector('picture img'),
+        thumbnailUrl: image?.currentSrc || image?.src
     };
 }
 
-function addOptionsAreas(post, allowMultiple = false, ...projects){
-    let wrapper = post.querySelector('.options-wrapper');
-    // Get or create the wrapper for this post
-    if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.classList.add('options-wrapper');
-        wrapper.style.display = 'none';
-        post.append(wrapper);
-    }
+function hideZoomContainer() {
+    zoomLoadId++;
+    zoomContainer.style.display = 'none';
 
-    for (const project of projects) {
-        // Don't create a duplicate options-area for the same project
-        if (wrapper.querySelector(`.options-area[data-project="${project.tagprojectName}"]`)) {
-            continue;
-        }
-        const optionsArea = document.createElement('div');
-        optionsArea.classList.add('options-area');
-        optionsArea.dataset.project = project.tagprojectName;
-        //for allowMultiple behavior
-        const selectedOptions = new Set();
+    zoomOptions.replaceChildren();
+    zoomOptions.style.display = 'none';
 
-        for (const option of project.options) {
-            const optionX = document.createElement('button');
-            optionX.classList.add('option');
-            optionX.innerText = option.option;
-            optionX.addEventListener('click', async () => {
-                if(allowMultiple){
-                    optionX.classList.toggle('focus');
-                    if(optionX.classList.contains('focus')){
-                        selectedOptions.add(option.change);
-                    }else{
-                        selectedOptions.delete(option.change);
-                    }
-                    console.log(selectedOptions);
-                    return;
-                }
-
-                console.log(post.dataset.id, option.change, project.tagprojectName);
-                //queue process here
-                if(taggingProjects.queue.isactive){//TODO rework queue compression to be on by default, call it "auto-compression"
-                    //TODO if queue is active, pull ALL changes for current post (if theyre compressed) then throw them through the project chaining
-                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:option.change, projectName: project.tagprojectName})
-                    saveList(taggingProjects);
-                }else{
-                    postChange(post.dataset.id, option.change, project.tagprojectName);
-                }
-                if(taggingProjects.projectChaining){ //TODO bug fix when 1 project's change has been sent, you click a different project & it re-adds the first project's option area
-                    const currentTags = getCurrentTags(post);
-                    const newTags = applyChangeToTags(currentTags, option.change);
-
-                    simulatedTags.set(post,newTags);
-                    updatePostProjects(post, newTags, allowMultiple);//slightly recursive, investigate if this can be changed.
-                }
-                removeOptionsArea(post, project);
-            });
-            optionsArea.append(optionX);
-        }
-        if(allowMultiple){
-            const submitOption = document.createElement('button');
-            submitOption.classList.add('option');
-            submitOption.style.flexBasis = '100%';
-            submitOption.innerText = 'Submit'; 
-            submitOption.addEventListener('click', function(){
-                if (selectedOptions.size === 0){
-                    return;
-                }
-                const combinedChange = [...selectedOptions].join(' ');
-                console.log(post.dataset.id, combinedChange);
-
-                if(taggingProjects.queue.isactive){
-                    taggingProjects.queue.content.push({type:'change',postnum:post.dataset.id, change:combinedChange, projectName: project.tagprojectName})
-                    saveList(taggingProjects);
-                }else{
-                    postChange(post.dataset.id, combinedChange, project.tagprojectName);
-                }
-
-                if(taggingProjects.projectChaining){
-                    const currentTags = getCurrentTags(post);
-                    const newTags = applyChangeToTags(currentTags, combinedChange);
-                    simulatedTags.set(post,newTags);
-                    updatePostProjects(post, newTags, allowMultiple);//slightly recursive, investigate if this can be changed.
-                }
-                removeOptionsArea(post, project);
-            });
-            optionsArea.append(submitOption);
-        }
-        wrapper.append(optionsArea);
-    }
-}
-//addOptionsAreas(post, projectA, projectB, projectC);
-
-function removeOptionsArea(post, project) {
-    const wrapper = post.querySelector('.options-wrapper');
-
-    if (!wrapper) {
-        console.log('post cannot locate the wrapper');
-        return;
-    }
-
-    const optionsArea = wrapper.querySelector(`.options-area[data-project='${project.tagprojectName}']`);
-
-    if (optionsArea) {
-        optionsArea.remove();
-    }
-
-    // If there are no options areas left, remove the wrapper too
-    if (wrapper.children.length === 0) {
-        wrapper.remove();
-        removeMouseHandlers(post)
-        post.classList.remove('highlighted-post');
-    }
+    activePost = null;
 }
 
-function addMouseEnterHandler(post) {
-    const wrapper = post.querySelector('.options-wrapper');
-    const imgEl = post.querySelector('picture img');
+function createOptionsArea(post, project, allowMultiple) {
+    const optionsArea = document.createElement('div');
+    optionsArea.classList.add('options-area');
+    optionsArea.dataset.project = project.tagprojectName;
 
-    if (!wrapper || !imgEl) {
-        console.log('post cannot locate the wrapper or img');
-        return;
-    }
+    const selectedOptions = new Set();
 
-    const sample = post.dataset.sampleUrl;
-    
-    // Only capture the original image once
-    if (!post._originalImg) {
-        post._originalImg = imgEl.src;
-    }
+    for (const option of project.options) {
+        const optionX = document.createElement('button');
 
-    const mouseEnterHandler = async () => {
-        post.classList.add('hovered');
-        wrapper.style.display = 'flex';
-        // Calculate how much the article is overflowing horizontally
-        const adjustHorizontalPosition = () => {
-            const rect = post.getBoundingClientRect();
-            const viewportWidth = document.documentElement.clientWidth;
+        optionX.classList.add('option');
+        optionX.innerText = option.option;
 
-            let offset = 0;
-            // Overflowing right
-            if (rect.right > viewportWidth) {
-                offset -= (rect.right + 10) - viewportWidth;
+        optionX.addEventListener('click', async () => {
+            if (allowMultiple) {
+                optionX.classList.toggle('focus');
+
+                if (optionX.classList.contains('focus')) {
+                    selectedOptions.add(option.change);
+                } else {
+                    selectedOptions.delete(option.change);
+                }
+            return;
             }
-            // Overflowing left
-            if (rect.left < 0) {
-                offset += -rect.left;
-            }
-
-            post.style.setProperty('--hover-x', `${offset}px`);
-        };
-
-        await loadImage(imgEl, sample);
-
-        requestAnimationFrame(() => {
-            adjustHorizontalPosition();
+            await processProjectChange(
+                post,
+                project,
+                option.change,
+                allowMultiple
+            );
         });
-    
-    };
-
-    post._mouseEnterHandler = mouseEnterHandler;
-    post.addEventListener('mouseenter', mouseEnterHandler);
-}
-
-function addMouseLeaveHandler(post) {
-    const wrapper = post.querySelector('.options-wrapper');
-    const imgEl = post.querySelector('picture img');
-
-    if (!wrapper || !imgEl) {
-        console.log('post cannot locate the wrapper or img');
-        return;
+        optionsArea.append(optionX);
     }
 
-    post._mouseLeaveHandler = function () {
-        imgEl.src = post._originalImg;
+    if (allowMultiple) {
+        const submitOption = document.createElement('button');
 
-        wrapper.style.display = 'none';
+        submitOption.classList.add('option');
+        submitOption.style.flexBasis = '100%';
+        submitOption.innerText = 'Submit';
 
-        post.classList.remove('hovered');
-        post.style.removeProperty('--hover-x');
+        submitOption.addEventListener('click', async () => {
+            if (selectedOptions.size === 0) {
+                return;
+            }
+
+            const combinedChange = [...selectedOptions].join(' ');
+
+            await processProjectChange(
+                post,
+                project,
+                combinedChange,
+                allowMultiple
+            );
+        });
+        optionsArea.append(submitOption);
+    }
+    return optionsArea;
+}
+
+function renderZoomOptions(post, allowMultiple) {
+    zoomOptions.replaceChildren();
+    const { projects } = getPostProjects(post);
+    if (projects.size === 0) {
+        zoomOptions.style.display = 'none';
+        return;
+    }
+    for (const project of projects.values()) {
+        const optionsArea = createOptionsArea(
+            post,
+            project,
+            allowMultiple
+        );
+        zoomOptions.append(optionsArea);
+    }
+    zoomOptions.style.display = 'flex';
+}
+
+async function processProjectChange(post, project, change, allowMultiple){
+    console.log(post.dataset.id,change,project.tagprojectName);
+
+    if (taggingProjects.queue.isactive){
+        taggingProjects.queue.content.push({
+            type: 'change',
+            postnum: post.dataset.id,
+            change,
+            projectName: project.tagprojectName
+        });
+        await saveList(taggingProjects);
+    } else {
+        await postChange(
+            post.dataset.id,
+            change,
+            project.tagprojectName
+        );
+    }
+    //Mark this project as completed
+    removePostProject(post, project.tagprojectName);
+    getCompletedProjects(post).add(project.tagprojectName);
+
+    //Project chaining
+    if (taggingProjects.projectChaining) {
+        const currentTags = getCurrentTags(post);
+
+        const newTags = applyChangeToTags(currentTags, change);
+
+        simulatedTags.set(post, newTags);
+
+        updatePostProjects(
+            post,
+            newTags,
+            allowMultiple
+        );
+    }else{
+        renderZoomOptions(post, allowMultiple);
+    }
+
+    //Nothing left to do
+    if (getPostProjects(post).projects.size === 0) {
+        finishPost(post);
+    }
+}
+
+function addMouseEnterHandler(post, allowMultiple) {
+    const mouseEnterHandler = async () => {
+        const { projects } = getPostProjects(post);
+
+        if (projects.size === 0) {
+            return;
+        }
+        cancelHideZoom();
+        //If switching directly from another post, immediately kill the old zoom state
+        if (activePost !== null && activePost !== post) {
+            zoomLoadId++;
+            zoomContainer.style.display = 'none';
+            zoomOptions.replaceChildren();
+            zoomOptions.style.display = 'none';
+        }
+        activePost = post;
+        renderZoomOptions(post, allowMultiple);//Render the controls for the new post
+        centerOn(post);//Position and SHOW the container immediately
+        loadSampleImage(post);//Start the thumbnail/sample transition independently
     };
 
-    post.addEventListener('mouseleave', post._mouseLeaveHandler);
+    const mouseLeaveHandler = () => {
+        scheduleHideZoom();
+    };
+    post._mouseEnterHandler = mouseEnterHandler;
+    post._mouseLeaveHandler = mouseLeaveHandler;
+    post.addEventListener('mouseenter', mouseEnterHandler);
+    post.addEventListener('mouseleave', mouseLeaveHandler);
 }
-//TODO make createMouseHandlers function, then place both handler creation function into it.
+
 function removeMouseHandlers(post) {
     if (post._mouseEnterHandler){
         post.removeEventListener('mouseenter',post._mouseEnterHandler);
         delete post._mouseEnterHandler;
     }
-
     if (post._mouseLeaveHandler){
         post.removeEventListener('mouseleave',post._mouseLeaveHandler);
-        post._mouseLeaveHandler();
         delete post._mouseLeaveHandler;
     }
 }
@@ -352,77 +466,92 @@ function applyChangeToTags(currentTags, change) {
 }
 //project chaining adding post to project
 function updatePostProjects(post, tags, allowMultiple) {
+    const { projects } = getPostProjects(post);
+    const completed = getCompletedProjects(post);
+
     for (const project of selectedProjects) {
+        const projectName = project.tagprojectName;
+        if (projects.has(projectName)) continue; // Already present
+        if (completed.has(projectName)) continue;
         const criteria = parseTags(project.tagprojectCriteria);
 
         if (!matchesCriteria(tags, criteria)) continue;
 
-        addOptionsAreas(post, allowMultiple, project);
-    }
-}
-// workflow 1 main function
-function highlightPosts(project, allowMultiple) { //TODO rename to workflow 1
-    selectedProjects.add(project);
-    
-    const projectCriteria = parseTags(project.tagprojectCriteria)
+        const validOptions = getValidOptions(project, tags);
 
-    const posts = getPostElements().filter(post => !isBlacklistedPost(post));
-    console.log(posts)
-    
-    for (const post of posts){
-    
-        //const data = getPostData(post);
-        //console.log(data.id);
-        //console.log(data.tags);
-        //console.log(data.image);
-
-        const postTags = new Set(parseTags(post.dataset.tags ?? "").whitelist);
-        let validOptions = [];
-        if (!matchesCriteria(postTags, projectCriteria)) continue;
-        if (project.template){
-            for (const option of project.options){
-                const parsedChange = parseTags(option.change);
-                
-                const hasAllWhitelist = parsedChange.whitelist.every(tag => postTags.has(tag));
-                const hasAllBlacklist = parsedChange.blacklist.every(tag => postTags.has(tag));
-
-                const needsFix = !hasAllWhitelist || !hasAllBlacklist;
-                if (needsFix) {
-                    validOptions.push(option);
-                }
-            }
-            
-        }else{
-            validOptions = project.options;
-        }
         if (validOptions.length === 0) continue;
-        console.log(post.dataset.id);
-        if (!originalMatches.has(post)) {
-            originalMatches.set(post, new Set());
+        
+        const filteredProject = {...project, options: validOptions};
+
+        projects.set(projectName, filteredProject);
+    }
+    renderZoomOptions(post, allowMultiple);
+}
+
+function getValidOptions(project, tags) {
+    if (!project.template) {
+        return project.options;
+    }
+
+    const validOptions = [];
+
+    for (const option of project.options) {
+        const parsedChange = parseTags(option.change);
+        const hasAllWhitelist = parsedChange.whitelist.every(tag => tags.has(tag));
+        const hasAllBlacklist = parsedChange.blacklist.every(tag => !tags.has(tag));
+
+        const needsFix = !hasAllWhitelist || !hasAllBlacklist;
+
+        if (needsFix) {
+            validOptions.push(option);
         }
-        originalMatches.get(post).add(project);
-        //cosmetics
+    }
+    return validOptions;
+}
+//highlightposts
+function highlightPosts(project, allowMultiple) {
+    selectedProjects.add(project);
+    const projectCriteria = parseTags(project.tagprojectCriteria);
+    const posts = getPostElements().filter(post => !isBlacklistedPost(post));
+
+    for (const post of posts) {
+        const postTags = new Set(parseTags(post.dataset.tags ?? '').whitelist);
+
+        if (!matchesCriteria(postTags, projectCriteria)) continue;
+
+        const validOptions = getValidOptions(project, postTags);
+
+        if (validOptions.length === 0) continue;
+
+        const filteredProject = {...project, options: validOptions};
+
+        getPostProjects(post).projects.set(filteredProject.tagprojectName, filteredProject);
+
         post.classList.add('highlighted-post');
-        //removing the source because the site wants to back it up when the thumbnail is pulled
-        post.querySelectorAll('source').forEach(s => s.remove());
-        // Pass a shallow copy of the project containing only the filtered valid options
-        const filteredProject = { ...project, options: validOptions };
-        //passing allowMultiple because it SHOULD be boolean
-        addOptionsAreas(post, allowMultiple, filteredProject);
-        if (!post._mouseEnterHandler){
-            addMouseEnterHandler(post);
+
+        if (!post._mouseEnterHandler) {
+            addMouseEnterHandler(post, allowMultiple);
         }
-        if (!post._mouseLeaveHandler){
-            addMouseLeaveHandler(post);
-        }
+        console.log('Highlighted post: ', post.dataset.id);
     }
 }
 
-function clearHighlights(){
-    document.querySelectorAll('.highlighted-post').forEach(post => {
-        post.classList.remove('highlighted-post');
-        removeMouseHandlers(post)
-    });
+function clearHighlights() {
+    document
+        .querySelectorAll('.highlighted-post')
+        .forEach(post => {
+            removeMouseHandlers(post);
+
+            post.classList.remove(
+                'highlighted-post'
+            );
+
+            simulatedTags.delete(post);
+            postProjects.delete(post);
+            completedProjects.delete(post);
+        });
+
+    hideZoomContainer();
 }
 //message handler for browser
 function handleMessage(message){
@@ -450,6 +579,25 @@ async function initialize(){
     browser.runtime.onMessage.addListener(handleMessage);
     taggingProjects = await loadBrowserData();
     console.log('Content Script Initialized.');
+
+    zoomContainer = document.createElement('div');
+    zoomContainer.id = 'zoomContainer';
+    document.body.append(zoomContainer);
+
+    iFrame = document.createElement('iframe');
+    zoomContainer.appendChild(iFrame);
+
+    zoomOptions = document.createElement('div');
+    zoomOptions.className = 'zoom-options';
+    zoomContainer.append(zoomOptions);
+    
+    zoomContainer.addEventListener('mouseenter', () => {
+        cancelHideZoom();
+    });
+
+    zoomContainer.addEventListener('mouseleave', () => {
+        scheduleHideZoom();
+    });
 }
 
 initialize();

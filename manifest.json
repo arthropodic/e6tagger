@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "e6tagger",
-    "version": "0.1",
+    "version": "0.3",
     "description": "Tagging tool for e621.",
 
     "action": {
