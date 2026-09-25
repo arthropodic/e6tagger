@@ -83,6 +83,7 @@ function centerOn(post) {
         console.error('Could not find .content');
         return;
     }
+    zoomContainer.style.display = 'flex'; //The container has to be displayed before measuring offsetWidth/offsetHeight
     const aspectRatio = img.naturalWidth / img.naturalHeight;
     const contentRect = content.getBoundingClientRect();
     let containerWidth;
@@ -125,7 +126,6 @@ function centerOn(post) {
 
     zoomContainer.style.left = `${x}px`;
     zoomContainer.style.top = `${y}px`;
-    zoomContainer.style.display = 'flex';
 }
 
 function getPostElements() {//TODO depreciated, adapt to new zoomContainer model
@@ -374,10 +374,6 @@ function addMouseEnterHandler(post, allowMultiple) {
         await loadSampleImage(post.dataset.sampleUrl);
         
         if (getPostProjects(post).size === 0) return;//The post might have been completed while the image was loading
-        
-        requestAnimationFrame(() => {
-            centerOn(post);
-        });
     };
 
     const mouseLeaveHandler = () => {
