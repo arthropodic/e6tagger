@@ -1,4 +1,4 @@
-//TODO make the site interactions cross extension compatable by replacing all site articles with post elements, then create the post elements through the content script.
+//TODO make the site interactions cross extension compatable with re621 & Umami
 const STORAGE_KEY = 'taggingProjects';
 let taggingProjects;
 const requestQueue = new TaskQueue();
@@ -46,7 +46,7 @@ async function postChange(postId, change, projectName) {
     }
     const body = new URLSearchParams({
         'post[tag_string_diff]': change,
-        'post[edit_reason]': `Using Tagging Project: ${projectName}`,
+        'post[edit_reason]': `Using Tagging Project: ${projectName}`, //TODO make multiple project send for queue.
         authenticity_token: authToken
     });
 
@@ -147,7 +147,6 @@ function cancelHideZoom() {
     clearTimeout(zoomHideTimer);
 }
 
-// add/delete posts with 'getPostProjects(post).add(project)' or 'getPostProjects(post).delete(project)' or simply 'getPostProjects(post).size'
 function getPostProjects(post) {
     if (!postProjects.has(post)) {
         postProjects.set(post, {
@@ -273,7 +272,7 @@ function createOptionsArea(post, project, allowMultiple) {
         optionX.classList.add('option');
         optionX.innerText = option.option;
 
-        optionX.addEventListener('click', async () => {
+        optionX.addEventListener('click', async () => { //TODO add multiple multi-options & non multi-option compatibility
             if (allowMultiple) {
                 optionX.classList.toggle('focus');
 
