@@ -227,7 +227,7 @@ function createProjectElement(project){
     createdProjectsContainer.append(projectX);
 }
 //validate form
-function validateProjectForm() { //TODO add a check for criteria conflicts, throw error w/ console log message when that happens or make message system to tell user.
+function validateProjectForm() { //TODO add a check for criteria conflicts, throw error w/ console log message when that happens or make message system to tell user. Add bracketing or tilda logic just like the website, have it only apply if its a template project. Something like "should have at least one of options pass, else doesnt quality" or "some options dont qualify based on their internal tag changes."
     const projectName = projectFormContainer.children[0];
     const projectCriteria = criteriaInput;
     let isValid = true;
