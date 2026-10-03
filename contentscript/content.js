@@ -46,7 +46,7 @@ async function postChange(postId, change, projectName) {
     }
     const body = new URLSearchParams({
         'post[tag_string_diff]': change,
-        'post[edit_reason]': `Using Tagging Project: ${projectName}`, //TODO make multiple project send for queue.
+        'post[edit_reason]': `Using Tagging Project: ${projectName}`,
         authenticity_token: authToken
     });
 
