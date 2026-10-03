@@ -318,7 +318,7 @@ function createOptionsArea(post, project, allowMultiple) {
     return optionsArea;
 }
 
-function renderZoomOptions(post, allowMultiple) {
+function renderZoomOptions(post) {
     zoomOptions.replaceChildren();
     const { projects } = getPostProjects(post);
     if (projects.size === 0) {
@@ -326,11 +326,7 @@ function renderZoomOptions(post, allowMultiple) {
         return;
     }
     for (const project of projects.values()) {
-        const optionsArea = createOptionsArea(
-            post,
-            project,
-            allowMultiple
-        );
+        const optionsArea = createOptionsArea(post, project, project.allowMultiple);
         zoomOptions.append(optionsArea);
     }
     zoomOptions.style.display = 'flex';
@@ -372,7 +368,7 @@ async function processProjectChange(post, project, change, allowMultiple){
             allowMultiple
         );
     }else{
-        renderZoomOptions(post, allowMultiple);
+        renderZoomOptions(post);
     }
 
     //Nothing left to do
@@ -396,7 +392,7 @@ function addMouseEnterHandler(post, allowMultiple) {
             zoomOptions.style.display = 'none';
         }
         activePost = post;
-        renderZoomOptions(post, allowMultiple);//Render the controls for the new post
+        renderZoomOptions(post);//Render the controls for the new post
         centerOn(post);//Position and SHOW the container immediately
         loadSampleImage(post);//Start the thumbnail/sample transition independently
     };
@@ -478,11 +474,11 @@ function updatePostProjects(post, tags, allowMultiple) {
 
         if (validOptions.length === 0) continue;
         
-        const filteredProject = {...project, options: validOptions};
+        const filteredProject = {...project, options: validOptions, allowMultiple};
 
         projects.set(projectName, filteredProject);
     }
-    renderZoomOptions(post, allowMultiple);
+    renderZoomOptions(post);
 }
 
 function getValidOptions(project, tags) {
@@ -520,7 +516,7 @@ function highlightPosts(project, allowMultiple) {
 
         if (validOptions.length === 0) continue;
 
-        const filteredProject = {...project, options: validOptions};
+        const filteredProject = {...project, options: validOptions, allowMultiple};
 
         getPostProjects(post).projects.set(filteredProject.tagprojectName, filteredProject);
 
