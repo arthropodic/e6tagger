@@ -10,7 +10,7 @@ const selectedProjects = new Set();
 const simulatedTags = new WeakMap();
 const completedProjects = new WeakMap();
 //Zoom container + options
-let zoomContainer,iFrame, zoomOptions;
+let zoomContainer, iFrame, zoomOptions, zoomLoader;
 let activePost = null;
 //zoom purpose assurance
 let zoomHideTimer = null;
@@ -191,32 +191,33 @@ function isRe621Post(post) {
 //TODO add gif/mp4/webm integration
 function loadSampleImage(post) {
     return new Promise((resolve) => {
-        const { thumbnailUrl, sampleUrl } =
-            getPostProjects(post).postData;
-
+        const { sampleUrl } = getPostProjects(post).postData;
         const loadId = ++zoomLoadId;
-        //Show the thumbnail immediately
-        iFrame.src = thumbnailUrl;
-        //Give the browser one rendering opportunity to display it before navigating the iframe to the sample.
-        requestAnimationFrame(() => {
+        zoomLoader.style.display = 'flex';
+        iFrame.style.visibility = 'hidden';
+        const oldFrame = iFrame;
+        const newFrame = document.createElement('iframe');
+        newFrame.style.visibility = 'hidden';
+        oldFrame.replaceWith(newFrame);
+        iFrame = newFrame;
+        if (loadId !== zoomLoadId || activePost !== post) {
+            resolve();
+            return;
+        }
+
+        const handleLoad = () => {
+            newFrame.removeEventListener('load', handleLoad);
             if (loadId !== zoomLoadId || activePost !== post) {
                 resolve();
                 return;
             }
-
-            const handleLoad = () => {
-                iFrame.removeEventListener('load', handleLoad);
-                // Ignore a load belonging to an old hover operation.
-                if (loadId !== zoomLoadId || activePost !== post) {
-                    resolve();
-                    return;
-                }
-                console.log('Sample iframe loaded:', sampleUrl);
-                resolve();
-            };
-            iFrame.addEventListener('load', handleLoad);
-            iFrame.src = sampleUrl;
-        });
+            console.log('Sample iframe loaded:', sampleUrl);
+            newFrame.style.visibility = 'visible';
+            zoomLoader.style.display = 'none';
+            resolve();
+        };
+        newFrame.addEventListener('load', handleLoad);
+        newFrame.src = sampleUrl;
     });
 }
 //if post is blacklisted. Haven't seen a non true blacklisted state for re621.
@@ -252,10 +253,8 @@ function getPostData(post) {
 function hideZoomContainer() {
     zoomLoadId++;
     zoomContainer.style.display = 'none';
-
     zoomOptions.replaceChildren();
     zoomOptions.style.display = 'none';
-
     activePost = null;
 }
 
@@ -392,7 +391,6 @@ function addMouseEnterHandler(post, allowMultiple) {
         cancelHideZoom();
         //If switching directly from another post, immediately kill the old zoom state
         if (activePost !== null && activePost !== post) {
-            zoomLoadId++;
             zoomContainer.style.display = 'none';
             zoomOptions.replaceChildren();
             zoomOptions.style.display = 'none';
@@ -583,6 +581,15 @@ async function initialize(){
     zoomContainer.id = 'zoomContainer';
     document.body.append(zoomContainer);
 
+    zoomLoader = document.createElement('div');
+    zoomLoader.className = 'zoom-loader';
+
+    const spinner = document.createElement('div');
+    spinner.className = 'zoom-spinner';
+    
+    zoomLoader.appendChild(spinner);
+    zoomContainer.appendChild(zoomLoader);
+    
     iFrame = document.createElement('iframe');
     zoomContainer.appendChild(iFrame);
 
