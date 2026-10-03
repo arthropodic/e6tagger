@@ -271,7 +271,7 @@ function createOptionsArea(post, project, allowMultiple) {
         optionX.classList.add('option');
         optionX.innerText = option.option;
 
-        optionX.addEventListener('click', async () => { //TODO add multiple multi-options & non multi-option compatibility
+        optionX.addEventListener('click', async () => {
             if (allowMultiple) {
                 optionX.classList.toggle('focus');
 
