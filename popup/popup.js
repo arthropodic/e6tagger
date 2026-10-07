@@ -212,12 +212,22 @@ function compressQueue(queue){
         removeQueueElement(request);
         if(request.type === 'change'){
             if (changesByPost.has(request.postnum)) {
-                changesByPost.get(request.postnum).change += ' ' + request.change; //TODO make quality assurance of spaces only being between two tags.
+                const existingRequest = changesByPost.get(request.postnum);
+                // Combine changes
+                existingRequest.change += ' ' + request.change; //TODO make quality assurance of spaces only being between two tags.
+                if (request.projectName) {
+                    if (existingRequest.projectName) {
+                        existingRequest.projectName += ', ' + request.projectName;
+                    } else {
+                        existingRequest.projectName = request.projectName;
+                    }
+                }
             } else {
                 const newRequest = {
                     type:'change',
                     postnum:request.postnum,
-                    change:request.change
+                    change:request.change,
+                    projectName: request.projectName
                 };
                 changesByPost.set(request.postnum, newRequest);
                 compressed.push(newRequest);
@@ -320,7 +330,7 @@ async function clearHighlights() {
     });
 }
 
-async function sendChange(change, projectName) {
+async function sendChange(change) {
     return sendToContentScript({
         action: 'sendChange',
         change

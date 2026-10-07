@@ -10,7 +10,9 @@ const selectedProjects = new Set();
 const simulatedTags = new WeakMap();
 const completedProjects = new WeakMap();
 //Zoom container + options
-let zoomContainer, iFrame, zoomOptions, zoomLoader;
+let zoomContainer, zoomFrameArea, iFrame, zoomOptions, zoomLoader;
+let zoomIframeWidth = 0;
+let zoomIframeHeight = 0;
 let activePost = null;
 //zoom purpose assurance
 let zoomHideTimer = null;
@@ -46,12 +48,12 @@ async function postChange(postId, change, projectName) {
     }
     const body = new URLSearchParams({
         'post[tag_string_diff]': change,
-        'post[edit_reason]': `Using Tagging Project: ${projectName}`, //TODO make multiple project send for queue.
+        'post[edit_reason]': `Using Tagging Project: ${projectName}`,
         authenticity_token: authToken
     });
 
     const agent = new URLSearchParams({
-        _client: 'e6tagger/0.3 (by arthropodic)'
+        _client: 'e6tagger/0.4 (by arthropodic)'
     });
 
     const response = await fetch(
@@ -88,39 +90,47 @@ function centerOn(post) {
     zoomContainer.style.display = 'flex';
     const aspectRatio = img.naturalWidth / img.naturalHeight;
     const contentRect = content.getBoundingClientRect();
-    let containerWidth;
-    let containerHeight;
+
+    let iframeWidth;
+    let iframeHeight;
     
     if (aspectRatio >= 1) {
         // Landscape or square
-        containerWidth = 700;
-        containerHeight = 700 / aspectRatio;
+        iframeWidth = 700;
+        iframeHeight = 700 / aspectRatio;
     } else {
         // Portrait
-        containerWidth = 700 * aspectRatio;
-        containerHeight = 700;
+        iframeWidth = 700 * aspectRatio;
+        iframeHeight = 700;
     }
+    zoomIframeWidth = iframeWidth;
+    zoomIframeHeight = iframeHeight;
+    // Apply the calculated dimensions to the iFrame, zoomFrameArea & zoomContainer
+    zoomFrameArea.style.width = `${zoomIframeWidth}px`;
+    zoomFrameArea.style.height = `${zoomIframeHeight}px`;
+    iFrame.style.width = `${zoomIframeWidth}px`;
+    iFrame.style.height = `${zoomIframeHeight}px`;
+    zoomContainer.style.width = `${iframeWidth}px`;
+    zoomContainer.style.height = 'auto';
+    const zoomWidth = zoomContainer.offsetWidth;
+    const zoomHeight = zoomContainer.offsetHeight;
 
-    // Apply the calculated dimensions to the zoom container
-    zoomContainer.style.width = `${containerWidth}px`;
-    zoomContainer.style.height = `${containerHeight}px`;
-    
-    //Center zoomContainer on the post
+    // Center the COMPLETE zoomContainer on the post.
     let x =
         postRect.left +
         postRect.width / 2 -
-        zoomContainer.offsetWidth / 2;
+        zoomWidth / 2;
 
     let y =
         postRect.top +
         postRect.height / 2 -
-        zoomContainer.offsetHeight / 2;
+        zoomHeight / 2;
     //Keep the zoomContainer completely inside .content
     const minX = contentRect.left;
-    const maxX = contentRect.right - zoomContainer.offsetWidth;
+    const maxX = contentRect.right - zoomWidth;
 
     const minY = contentRect.top;
-    const maxY = contentRect.bottom - zoomContainer.offsetHeight;
+    const maxY = contentRect.bottom - zoomHeight;
 
     x = Math.max(minX, Math.min(x, maxX));
     y = Math.max(minY, Math.min(y, maxY));
@@ -198,6 +208,8 @@ function loadSampleImage(post) {
         const oldFrame = iFrame;
         const newFrame = document.createElement('iframe');
         newFrame.style.visibility = 'hidden';
+        newFrame.style.width = `${zoomIframeWidth}px`;
+        newFrame.style.height = `${zoomIframeHeight}px`;
         oldFrame.replaceWith(newFrame);
         iFrame = newFrame;
         if (loadId !== zoomLoadId || activePost !== post) {
@@ -271,7 +283,7 @@ function createOptionsArea(post, project, allowMultiple) {
         optionX.classList.add('option');
         optionX.innerText = option.option;
 
-        optionX.addEventListener('click', async () => { //TODO add multiple multi-options & non multi-option compatibility
+        optionX.addEventListener('click', async () => {
             if (allowMultiple) {
                 optionX.classList.toggle('focus');
 
@@ -318,7 +330,7 @@ function createOptionsArea(post, project, allowMultiple) {
     return optionsArea;
 }
 
-function renderZoomOptions(post, allowMultiple) {
+function renderZoomOptions(post) {
     zoomOptions.replaceChildren();
     const { projects } = getPostProjects(post);
     if (projects.size === 0) {
@@ -326,11 +338,7 @@ function renderZoomOptions(post, allowMultiple) {
         return;
     }
     for (const project of projects.values()) {
-        const optionsArea = createOptionsArea(
-            post,
-            project,
-            allowMultiple
-        );
+        const optionsArea = createOptionsArea(post, project, project.allowMultiple);
         zoomOptions.append(optionsArea);
     }
     zoomOptions.style.display = 'flex';
@@ -372,7 +380,7 @@ async function processProjectChange(post, project, change, allowMultiple){
             allowMultiple
         );
     }else{
-        renderZoomOptions(post, allowMultiple);
+        renderZoomOptions(post);
     }
 
     //Nothing left to do
@@ -396,7 +404,7 @@ function addMouseEnterHandler(post, allowMultiple) {
             zoomOptions.style.display = 'none';
         }
         activePost = post;
-        renderZoomOptions(post, allowMultiple);//Render the controls for the new post
+        renderZoomOptions(post);//Render the controls for the new post
         centerOn(post);//Position and SHOW the container immediately
         loadSampleImage(post);//Start the thumbnail/sample transition independently
     };
@@ -478,11 +486,11 @@ function updatePostProjects(post, tags, allowMultiple) {
 
         if (validOptions.length === 0) continue;
         
-        const filteredProject = {...project, options: validOptions};
+        const filteredProject = {...project, options: validOptions, allowMultiple};
 
         projects.set(projectName, filteredProject);
     }
-    renderZoomOptions(post, allowMultiple);
+    renderZoomOptions(post);
 }
 
 function getValidOptions(project, tags) {
@@ -520,7 +528,7 @@ function highlightPosts(project, allowMultiple) {
 
         if (validOptions.length === 0) continue;
 
-        const filteredProject = {...project, options: validOptions};
+        const filteredProject = {...project, options: validOptions, allowMultiple};
 
         getPostProjects(post).projects.set(filteredProject.tagprojectName, filteredProject);
 
@@ -581,17 +589,20 @@ async function initialize(){
     zoomContainer.id = 'zoomContainer';
     document.body.append(zoomContainer);
 
+    zoomFrameArea = document.createElement('div');
+    zoomFrameArea.className = 'zoom-frame-area';
+    zoomContainer.appendChild(zoomFrameArea);
+
+    iFrame = document.createElement('iframe');
+    zoomFrameArea.appendChild(iFrame);
+    
     zoomLoader = document.createElement('div');
     zoomLoader.className = 'zoom-loader';
+    zoomFrameArea.appendChild(zoomLoader);
 
     const spinner = document.createElement('div');
     spinner.className = 'zoom-spinner';
-    
     zoomLoader.appendChild(spinner);
-    zoomContainer.appendChild(zoomLoader);
-    
-    iFrame = document.createElement('iframe');
-    zoomContainer.appendChild(iFrame);
 
     zoomOptions = document.createElement('div');
     zoomOptions.className = 'zoom-options';
