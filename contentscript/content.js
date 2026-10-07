@@ -205,11 +205,11 @@ function loadSampleImage(post) {
         const loadId = ++zoomLoadId;
         zoomLoader.style.display = 'flex';
         iFrame.style.visibility = 'hidden';
-        newFrame.style.width = `${zoomIframeWidth}px`;
-        newFrame.style.height = `${zoomIframeHeight}px`;
         const oldFrame = iFrame;
         const newFrame = document.createElement('iframe');
         newFrame.style.visibility = 'hidden';
+        newFrame.style.width = `${zoomIframeWidth}px`;
+        newFrame.style.height = `${zoomIframeHeight}px`;
         oldFrame.replaceWith(newFrame);
         iFrame = newFrame;
         if (loadId !== zoomLoadId || activePost !== post) {
