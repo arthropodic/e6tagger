@@ -1,0 +1,32 @@
+{
+  "tagprojectName": "AlphyStandard",
+  "tagprojectDescription": "This is the standard of the Undertale character Alphys:\nreptile\npseudo_hair\nyellow_skin\nglasses\nlab_coat\nbuckteeth",
+  "tagprojectCriteria": "alphys",
+  "template": true,
+  "options": [
+    {
+      "option": "reptile",
+      "change": "reptile"
+    },
+    {
+      "option": "Yellow Skin",
+      "change": "yellow_skin"
+    },
+    {
+      "option": "Buckteeth",
+      "change": "buckteeth"
+    },
+    {
+      "option": "glasses",
+      "change": "glasses"
+    },
+    {
+      "option": "lab_coat",
+      "change": "lab_coat"
+    },
+    {
+      "option": "Pseudo Hair",
+      "change": "pseudo_hair"
+    }
+  ]
+}
