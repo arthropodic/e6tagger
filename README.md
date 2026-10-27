@@ -6,7 +6,11 @@ Changes made with extension are YOUR responsibility. Use responsibly.
 Contains a platform for the tagging project tool, and the tool creation form.
 A tagging project is a tag changing tool that prompts you with options that make changes to posts. Tagging projects have criteria that a posts tags have to meet in order to be prompted for the options.
 
-# How To Download:
+# How to Download:
+1. Go to https://addons.mozilla.org/en-US/firefox/addon/e6tagger/ or search for 'e6tagger' on the Firefox Addon store.
+2. Download the Addon.
+
+# How To Download manually:
 1. Download This project, or clone main branch.
 3. Go to the 'about:debugging' on a Mozilla based browser.
 4. Click 'This Firefox', then click 'Load Temporary Add-on...', then select the 'manifest.json' file in this project.
