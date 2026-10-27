@@ -1,0 +1,68 @@
+{
+  "tagprojectName": "pupilsColor",
+  "tagprojectDescription": "What color is the pupils?\npupils in humans are the black center of the eye.\nMonochrome discludes this.\n\nRecommended Criteria:\n-eyes_closed -black_pupils -gray_pupils -white_pupils -brown_pupils -amber_pupils -tan_pupils -yellow_pupils -orange_pupils -red_pupils -pink_pupils -purple_pupils -blue_pupils -teal_pupils -green_pupils -no_pupils -eyeless -monochrome",
+  "tagprojectCriteria": "-eyes_closed -black_pupils -gray_pupils -white_pupils -brown_pupils -amber_pupils -tan_pupils -yellow_pupils -orange_pupils -red_pupils -pink_pupils -purple_pupils -blue_pupils -teal_pupils -green_pupils -no_pupils -eyeless -monochrome",
+  "template": false,
+  "options": [
+    {
+      "option": "Black pupils",
+      "change": "black_pupils"
+    },
+    {
+      "option": "Grey",
+      "change": "grey_pupils"
+    },
+    {
+      "option": "White",
+      "change": "white_pupils"
+    },
+    {
+      "option": "Brown",
+      "change": "brown_pupils"
+    },
+    {
+      "option": "Amber",
+      "change": "amber_pupils"
+    },
+    {
+      "option": "Tan",
+      "change": "tan_pupils"
+    },
+    {
+      "option": "Yellow",
+      "change": "yellow_pupils"
+    },
+    {
+      "option": "Orange",
+      "change": "orange_pupils"
+    },
+    {
+      "option": "Red",
+      "change": "red_pupils"
+    },
+    {
+      "option": "Pink",
+      "change": "pink_pupils"
+    },
+    {
+      "option": "Purple",
+      "change": "purple_pupils"
+    },
+    {
+      "option": "Blue",
+      "change": "blue_pupils"
+    },
+    {
+      "option": "Teal",
+      "change": "teal_pupils"
+    },
+    {
+      "option": "Green",
+      "change": "green_pupils"
+    },
+    {
+      "option": "No Pupils",
+      "change": "no_pupils"
+    }
+  ]
+}
